@@ -2,9 +2,12 @@ name: Monitor Bursatil Telegram
 
 on:
   schedule:
-    # Corre de lunes a viernes en horario de mercado (UTC)
+    # Lunes a viernes en horario de mercado (UTC)
     - cron: '*/5 13-20 * * 1-5'
-  workflow_dispatch: # Permite probarlo manualmente cuando quieras
+  workflow_dispatch:
+
+permissions:
+  contents: write  # Permite guardar el estado.json de vuelta en el repo
 
 jobs:
   vigilar:
@@ -29,3 +32,13 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           python preliminar.py
+
+      - name: Guardar estado si hubo alertas
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -f estado.json ]; then
+            git add estado.json
+            git commit -m "Auto-update: Alerta registrada en estado.json [skip ci]" || exit 0
+            git push
+          fi
